@@ -8,12 +8,12 @@
 bl_info = {
     "name": "Colobot Model Format (.txt)",
     "author": "TerranovaTeam",
-    "version": (0, 0, 3),
-    "blender": (2, 6, 4),
+    "version": (0, 0, 4),
+    "blender": (2, 80, 0),
     "location": "File > Export > Colobot (.txt)",
     "description": "Export Colobot Model Format (.txt)",
     "warning": "",
-    "wiki_url": "http://colobot.info"\
+    "doc_url": "http://colobot.info"\
         "",
     "tracker_url": ""\
         "",
@@ -25,6 +25,7 @@ import array
 import os
 import copy
 import math
+import re
 
 
 ##
@@ -550,13 +551,13 @@ class ExportColobotDialog(bpy.types.Operator):
     bl_idname = 'object.export_colobot_dialog'
     bl_label = "Dialog for Colobot export"
 
-    mode = bpy.props.EnumProperty(
+    mode: bpy.props.EnumProperty(
         name="Mode",
         items = [('overwrite', "Overwrite", "Overwrite existing model triangles"),
                  ('append', "Append", "Append triangles to existing model")],
                  default='overwrite')
 
-    default_lod_level = bpy.props.EnumProperty(
+    default_lod_level: bpy.props.EnumProperty(
         name="Default LOD level",
         items = [('0', "Constant", "Constant (always visible)"),
                  ('1', "Low", "Low (visible at furthest distance)"),
@@ -564,9 +565,9 @@ class ExportColobotDialog(bpy.types.Operator):
                  ('3', "High", "High (visible at closest distance)")],
                  default='0')
 
-    default_var_tex2 = bpy.props.BoolProperty(name="Default variable 2nd texture", default=False)
+    default_var_tex2: bpy.props.BoolProperty(name="Default variable 2nd texture", default=False)
 
-    default_state = bpy.props.IntProperty(name="Default state", default=0)
+    default_state: bpy.props.IntProperty(name="Default state", default=0)
 
     def execute(self, context):
         global EXPORT_FILEPATH
@@ -609,7 +610,7 @@ class ExportColobot(bpy.types.Operator):
     bl_idname = "export.colobot"
     bl_label = "Export to Colobot"
 
-    filepath = bpy.props.StringProperty(subtype="FILE_PATH")
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
 
     @classmethod
     def poll(cls, context):
@@ -636,8 +637,8 @@ class ImportColobotDialog(bpy.types.Operator):
     bl_idname = 'object.import_colobot_dialog'
     bl_label = "Dialog for Colobot import"
 
-    lod_separate_layers = bpy.props.BoolProperty(name="LOD levels to separate layers", default=True)
-    texture_dir = bpy.props.StringProperty(name="Texture directory", subtype="DIR_PATH")
+    lod_separate_layers: bpy.props.BoolProperty(name="LOD levels to separate layers", default=True)
+    texture_dir: bpy.props.StringProperty(name="Texture directory", subtype="DIR_PATH")
 
     def execute(self, context):
         global IMPORT_FILEPATH
@@ -685,7 +686,7 @@ class ImportColobot(bpy.types.Operator):
     bl_idname = "import.colobot"
     bl_label = "Import from Colobot"
 
-    filepath = bpy.props.StringProperty(subtype="FILE_PATH")
+    filepath: bpy.props.StringProperty(subtype="FILE_PATH")
 
     @classmethod
     def poll(cls, context):
@@ -726,10 +727,42 @@ def register_material_props():
     bpy.types.Material.state = bpy.props.IntProperty(name="State", description="Engine render state")
 
 # Add-on registration
+# def register():
+#     bpy.utils.register_module(__name__)
+#     print("LOADING COLOBOT IMPORTER")
+#     register_material_props()
+
+#     bpy.types.INFO_MT_file_export.append(export_menu_func)
+#     bpy.types.INFO_MT_file_import.append(import_menu_func)
+
+classes = [
+    ExportColobot,
+    ExportColobotDialog,
+    ImportColobot, 
+    ImportColobotDialog, 
+]
+
+functions = [
+    (bpy.types.TOPBAR_MT_file_export, export_menu_func),
+    (bpy.types.TOPBAR_MT_file_import, import_menu_func)
+]
+
 def register():
-    bpy.utils.register_module(__name__)
+    from bpy.utils import register_class
+    print("Registering Colobot functions")
 
-    register_material_props()
+    for c in classes:
+        register_class(c)
 
-    bpy.types.INFO_MT_file_export.append(export_menu_func)
-    bpy.types.INFO_MT_file_import.append(import_menu_func)
+    for t, f in functions:
+        t.append(f)
+   
+def unregister():
+    from bpy.utils import unregister_class
+    print("Unregistering Colobot functions")
+
+    for c in classes:
+        unregister_class(c)
+
+    for t, f in functions:
+        t.remove(f)
